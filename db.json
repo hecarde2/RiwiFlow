@@ -1,0 +1,69 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Admin User",
+      "email": "admin@riwiflow.com",
+      "password": "admin123",
+      "role": "admin"
+    },
+    {
+      "id": 2,
+      "name": "John Coder",
+      "email": "john@riwiflow.com",
+      "password": "coder123",
+      "role": "coder"
+    },
+    {
+      "id": 3,
+      "name": "Jane Coder",
+      "email": "jane@riwiflow.com",
+      "password": "coder123",
+      "role": "coder"
+    }
+  ],
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Design Login Page",
+      "description": "Create UI mockups for the login interface",
+      "status": "done",
+      "userId": 2
+    },
+    {
+      "id": 2,
+      "title": "Setup Database",
+      "description": "Configure JSON Server and create db.json",
+      "status": "done",
+      "userId": 3
+    },
+    {
+      "id": 3,
+      "title": "Implement Authentication",
+      "description": "Add login/logout functionality with role validation",
+      "status": "in_progress",
+      "userId": 2
+    },
+    {
+      "id": 4,
+      "title": "Create Kanban Board",
+      "description": "Build Kanban component with drag-and-drop",
+      "status": "in_progress",
+      "userId": 3
+    },
+    {
+      "id": 5,
+      "title": "Add Task Management",
+      "description": "Implement create, read, update, delete operations",
+      "status": "in_review",
+      "userId": 2
+    },
+    {
+      "id": 6,
+      "title": "Test Role-Based Access",
+      "description": "Verify admin and coder permissions work correctly",
+      "status": "todo",
+      "userId": 3
+    }
+  ]
+}
