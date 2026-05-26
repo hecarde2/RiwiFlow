@@ -11,14 +11,11 @@ const app = {
 
 // Utilities
 function showElement(id) {
-  document.getElementById(id).classList.remove('hidden-login', 'hidden-dashboard', 'hidden');
+  document.getElementById(id).classList.remove('hidden');
 }
 
 function hideElement(id) {
-  const elem = document.getElementById(id);
-  if (elem.id === 'loginView') elem.classList.add('hidden-login');
-  if (elem.id === 'dashboardView') elem.classList.add('hidden-dashboard');
-  elem.classList.add('hidden');
+  document.getElementById(id).classList.add('hidden');
 }
 
 function showNotification(message, type = 'success') {
@@ -43,6 +40,7 @@ async function fetchTasks() {
   try {
     const res = await fetch(`${API_URL}/tasks`);
     app.tasks = await res.json();
+    app.filteredTasks = [...app.tasks];
     renderKanban();
   } catch (err) {
     console.error('Error fetching tasks:', err);
@@ -60,10 +58,13 @@ async function createTask(task) {
       await fetchTasks();
       showNotification('Task created successfully!');
       closeModal();
+    } else {
+      console.error('Error response:', res.status);
+      showNotification('Error creating task', 'error');
     }
   } catch (err) {
     console.error('Error creating task:', err);
-    showNotification('Error creating task', 'error');
+    showNotification('Error creating task: ' + err.message, 'error');
   }
 }
 
@@ -109,8 +110,8 @@ async function login(email, password) {
     if (user) {
       app.currentUser = user;
       localStorage.setItem('currentUser', JSON.stringify(user));
-      showElement('dashboardView');
       hideElement('loginView');
+      showElement('dashboardView');
       document.getElementById('userRole').textContent = user.role.toUpperCase();
       await fetchUsers();
       await fetchTasks();
@@ -130,8 +131,8 @@ async function login(email, password) {
 function logout() {
   app.currentUser = null;
   localStorage.removeItem('currentUser');
-  hideElement('dashboardView');
   showElement('loginView');
+  hideElement('dashboardView');
   document.getElementById('loginForm').reset();
   document.getElementById('loginError').classList.add('hidden');
 }
@@ -145,8 +146,10 @@ function renderKanban() {
     const count = document.getElementById(`count-${status}`);
     const tasks = app.filteredTasks.filter(t => t.status === status);
     
-    count.textContent = tasks.length;
-    column.innerHTML = tasks.map(task => createTaskCard(task)).join('');
+    if (count) count.textContent = tasks.length;
+    if (column) {
+      column.innerHTML = tasks.map(task => createTaskCard(task)).join('');
+    }
   });
 }
 
@@ -155,12 +158,12 @@ function createTaskCard(task) {
   const canEdit = app.currentUser.role === 'admin' || task.userId === app.currentUser.id;
   
   return `
-    <div class="task-card bg-surface border border-outline-variant rounded-xl p-md shadow-sm cursor-pointer ${canEdit ? 'hover:shadow-lg' : ''}" ${canEdit ? `onclick="openEditModal(${task.id})"` : ''}>
+    <div class="task-card bg-surface border border-outline-variant rounded-xl p-md shadow-sm ${canEdit ? 'cursor-pointer' : ''}" ${canEdit ? `onclick="openEditModal(${task.id})"` : ''}>
       <h4 class="font-label-md text-label-md text-on-surface mb-xs">${task.title}</h4>
       <p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">${task.description}</p>
       <div class="mt-md flex items-center justify-between">
-        <span class="text-xs text-on-surface-variant">${user?.name}</span>
-        ${app.currentUser.role === 'admin' ? `<button onclick="deleteTask(${task.id})" class="text-error hover:bg-error/10 p-1 rounded">✕</button>` : ''}
+        <span class="text-xs text-on-surface-variant">${user?.name || 'Unassigned'}</span>
+        ${app.currentUser.role === 'admin' ? `<button onclick="event.stopPropagation(); deleteTask(${task.id})" class="text-error hover:bg-error/10 p-1 rounded">✕</button>` : ''}
       </div>
     </div>
   `;
@@ -186,6 +189,8 @@ function openCreateModal() {
 
 function openEditModal(taskId) {
   const task = app.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  
   const canEdit = app.currentUser.role === 'admin' || task.userId === app.currentUser.id;
   
   if (!canEdit) {
@@ -214,75 +219,94 @@ function openEditModal(taskId) {
 
 function populateUserSelect() {
   const select = document.getElementById('taskUserId');
-  select.innerHTML = app.users
-    .filter(u => u.role === 'coder')
-    .map(u => `<option value="${u.id}">${u.name}</option>`)
-    .join('');
+  if (select) {
+    select.innerHTML = app.users
+      .filter(u => u.role === 'coder')
+      .map(u => `<option value="${u.id}">${u.name}</option>`)
+      .join('');
+  }
 }
 
 // Search Functionality
-document.addEventListener('DOMContentLoaded', () => {
+function setupSearch() {
   const searchInput = document.getElementById('searchInput');
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
       const query = e.target.value.toLowerCase();
-      app.filteredTasks = app.tasks.filter(t =>
-        t.title.toLowerCase().includes(query) ||
-        t.description.toLowerCase().includes(query)
-      );
+      if (query.trim() === '') {
+        app.filteredTasks = [...app.tasks];
+      } else {
+        app.filteredTasks = app.tasks.filter(t =>
+          t.title.toLowerCase().includes(query) ||
+          t.description.toLowerCase().includes(query)
+        );
+      }
       renderKanban();
     });
   }
-});
+}
 
 // Event Listeners
-document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
-  await login(email, password);
-});
-
-document.getElementById('logoutBtn')?.addEventListener('click', logout);
-document.getElementById('mobileLogoutBtn')?.addEventListener('click', logout);
-
-document.getElementById('taskForm')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const taskId = document.getElementById('taskId').value;
-  const task = {
-    title: document.getElementById('taskTitle').value,
-    description: document.getElementById('taskDescription').value,
-    status: document.getElementById('taskStatus').value,
-    userId: parseInt(document.getElementById('taskUserId').value),
-  };
-  
-  if (taskId) {
-    await updateTask(taskId, task);
-  } else {
-    await createTask(task);
+document.addEventListener('DOMContentLoaded', () => {
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      await login(email, password);
+    });
   }
-});
 
-// Modal close on outside click
-document.getElementById('taskModal')?.addEventListener('click', (e) => {
-  if (e.target === document.getElementById('taskModal')) {
-    closeModal();
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', logout);
   }
-});
 
-// Initialize App
-window.addEventListener('load', () => {
+  const taskForm = document.getElementById('taskForm');
+  if (taskForm) {
+    taskForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const taskId = document.getElementById('taskId').value;
+      const task = {
+        title: document.getElementById('taskTitle').value,
+        description: document.getElementById('taskDescription').value,
+        status: document.getElementById('taskStatus').value,
+        userId: parseInt(document.getElementById('taskUserId').value),
+      };
+      
+      if (taskId) {
+        await updateTask(taskId, task);
+      } else {
+        await createTask(task);
+      }
+    });
+  }
+
+  const taskModal = document.getElementById('taskModal');
+  if (taskModal) {
+    taskModal.addEventListener('click', (e) => {
+      if (e.target === taskModal) {
+        closeModal();
+      }
+    });
+  }
+
+  // Initialize App
   const savedUser = localStorage.getItem('currentUser');
   if (savedUser) {
     app.currentUser = JSON.parse(savedUser);
-    showElement('dashboardView');
     hideElement('loginView');
+    showElement('dashboardView');
     document.getElementById('userRole').textContent = app.currentUser.role.toUpperCase();
     fetchUsers();
     fetchTasks();
   } else {
     showElement('loginView');
+    hideElement('dashboardView');
   }
+
+  setupSearch();
 });
 
 // Expose functions for HTML onclick handlers
