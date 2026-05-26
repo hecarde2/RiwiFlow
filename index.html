@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RiwiFlow - Kanban Task Management</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "secondary-fixed": "#e3e1ed",
+                        "tertiary": "#6b3000",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#5b00c5",
+                        "on-tertiary-container": "#ffc19e",
+                        "surface-container-low": "#f9f1ff",
+                        "secondary": "#5d5d67",
+                        "on-secondary-container": "#64636d",
+                        "inverse-on-surface": "#f6eefc",
+                        "surface-dim": "#dfd7e5",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#c7c5d1",
+                        "on-primary-container": "#dac5ff",
+                        "surface-variant": "#e8e0ee",
+                        "surface": "#fef7ff",
+                        "inverse-primary": "#d3bbff",
+                        "on-error": "#ffffff",
+                        "surface-container-highest": "#e8e0ee",
+                        "secondary-container": "#e3e1ed",
+                        "on-primary-fixed": "#250059",
+                        "on-secondary-fixed-variant": "#46464f",
+                        "surface-container": "#f3ebf9",
+                        "primary-container": "#6d28d9",
+                        "outline-variant": "#ccc3d7",
+                        "primary-fixed": "#ebddff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#ede5f3",
+                        "surface-bright": "#fef7ff",
+                        "primary-fixed-dim": "#d3bbff",
+                        "on-primary": "#ffffff",
+                        "outline": "#7b7486",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#743400",
+                        "background": "#fef7ff",
+                        "tertiary-container": "#8f4200",
+                        "on-secondary-fixed": "#1a1b23",
+                        "error-container": "#ffdad6",
+                        "on-background": "#1d1a24",
+                        "primary": "#5300b7",
+                        "surface-tint": "#7331df",
+                        "on-error-container": "#93000a",
+                        "on-surface-variant": "#4a4455",
+                        "tertiary-fixed-dim": "#ffb68b",
+                        "on-surface": "#1d1a24",
+                        "on-tertiary-fixed": "#321300",
+                        "tertiary-fixed": "#ffdbc8",
+                        "inverse-surface": "#332f39",
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem",
+                    },
+                    spacing: {
+                        "md": "16px",
+                        "xxl": "48px",
+                        "xl": "32px",
+                        "xs": "4px",
+                        "sm": "8px",
+                        "gutter": "24px",
+                        "lg": "24px",
+                        "margin-mobile": "16px",
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+            display: inline-block;
+            vertical-align: middle;
+            line-height: 1;
+        }
+        .input-focus-ring:focus {
+            outline: none;
+            border-color: #5300b7;
+            box-shadow: 0 0 0 2px #ebddff;
+        }
+        .kanban-column {
+            min-width: 280px;
+        }
+        .hidden-login {
+            display: none !important;
+        }
+        .hidden-dashboard {
+            display: none !important;
+        }
+        .task-card:hover {
+            transform: translateY(-2px);
+            transition: all 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background">
+    <!-- Login View -->
+    <div id="loginView" class="flex items-center justify-center min-h-screen px-gutter bg-surface-container-lowest">
+        <div class="w-full max-w-[440px] space-y-xl">
+            <div class="text-center space-y-md">
+                <h1 class="text-4xl font-bold text-primary">RiwiFlow</h1>
+                <p class="text-body-md text-on-surface-variant">Sign in to your professional workspace</p>
+            </div>
+            <div class="bg-surface-container-lowest border border-outline-variant p-xl rounded-xl space-y-lg">
+                <form id="loginForm" class="space-y-lg">
+                    <div class="space-y-sm">
+                        <label class="font-label-md text-label-md text-on-surface" for="email">Email address</label>
+                        <input class="w-full px-md py-md bg-white border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface input-focus-ring transition-all placeholder:text-outline" id="email" name="email" placeholder="name@company.com" required type="email" />
+                    </div>
+                    <div class="space-y-sm">
+                        <label class="font-label-md text-label-md text-on-surface" for="password">Password</label>
+                        <input class="w-full px-md py-md bg-white border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface input-focus-ring transition-all placeholder:text-outline" id="password" name="password" placeholder="••••••••" required type="password" />
+                    </div>
+                    <div id="loginError" class="hidden text-error text-sm bg-error-container p-2 rounded"></div>
+                    <button class="w-full bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md py-md px-lg rounded-lg transition-all" type="submit">
+                        Login <span class="material-symbols-outlined">arrow_forward</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard View -->
+    <div id="dashboardView" class="hidden-dashboard flex h-screen flex-col">
+        <!-- Header -->
+        <header class="flex justify-between items-center h-16 px-gutter bg-surface border-b border-outline-variant">
+            <h1 class="text-2xl font-bold text-primary">RiwiFlow</h1>
+            <div class="flex items-center gap-4">
+                <input class="px-md py-md bg-surface-container border border-outline-variant rounded-full font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20" id="searchInput" placeholder="Search tasks..." type="text" />
+                <span id="userRole" class="font-label-md text-primary font-bold"></span>
+                <button id="logoutBtn" class="bg-error text-on-error px-4 py-2 rounded-lg font-label-md hover:opacity-90 transition-opacity">Logout</button>
+            </div>
+        </header>
+
+        <!-- Kanban Board -->
+        <div class="flex-1 overflow-x-auto p-gutter">
+            <div class="flex gap-gutter h-full">
+                <!-- To Do Column -->
+                <div class="kanban-column flex flex-col w-1/4">
+                    <div class="flex items-center justify-between mb-md">
+                        <h3 class="font-title-sm text-title-sm text-on-surface">To Do</h3>
+                        <span id="count-todo" class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full font-label-sm text-label-sm">0</span>
+                    </div>
+                    <div id="column-todo" class="flex-1 space-y-md p-2 bg-surface-container-low/50 rounded-xl overflow-y-auto"></div>
+                </div>
+
+                <!-- In Progress Column -->
+                <div class="kanban-column flex flex-col w-1/4">
+                    <div class="flex items-center justify-between mb-md">
+                        <h3 class="font-title-sm text-title-sm text-on-surface">In Progress</h3>
+                        <span id="count-in_progress" class="bg-primary-container text-on-primary px-2 py-0.5 rounded-full font-label-sm text-label-sm">0</span>
+                    </div>
+                    <div id="column-in_progress" class="flex-1 space-y-md p-2 bg-surface-container-low/50 rounded-xl overflow-y-auto"></div>
+                </div>
+
+                <!-- In Review Column -->
+                <div class="kanban-column flex flex-col w-1/4">
+                    <div class="flex items-center justify-between mb-md">
+                        <h3 class="font-title-sm text-title-sm text-on-surface">In Review</h3>
+                        <span id="count-in_review" class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full font-label-sm text-label-sm">0</span>
+                    </div>
+                    <div id="column-in_review" class="flex-1 space-y-md p-2 bg-surface-container-low/50 rounded-xl overflow-y-auto"></div>
+                </div>
+
+                <!-- Done Column -->
+                <div class="kanban-column flex flex-col w-1/4">
+                    <div class="flex items-center justify-between mb-md">
+                        <h3 class="font-title-sm text-title-sm text-on-surface">Done</h3>
+                        <span id="count-done" class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full font-label-sm text-label-sm">0</span>
+                    </div>
+                    <div id="column-done" class="flex-1 space-y-md p-2 bg-surface-container-low/50 rounded-xl overflow-y-auto"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAB Button for Create Task -->
+        <button onclick="openCreateModal()" class="fixed bottom-8 right-8 bg-primary hover:bg-primary-container text-on-primary w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all">
+            <span class="material-symbols-outlined text-2xl">add</span>
+        </button>
+    </div>
+
+    <!-- Task Modal -->
+    <div id="taskModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-xl max-w-md w-full mx-4 space-y-lg">
+            <h2 id="modalTitle" class="text-2xl font-bold text-on-surface"></h2>
+            <form id="taskForm" class="space-y-md">
+                <input type="hidden" id="taskId" />
+                <div>
+                    <label class="font-label-md text-label-md text-on-surface">Title</label>
+                    <input class="w-full px-md py-md bg-white border border-outline-variant rounded-lg font-body-md" id="taskTitle" type="text" required />
+                </div>
+                <div>
+                    <label class="font-label-md text-label-md text-on-surface">Description</label>
+                    <textarea class="w-full px-md py-md bg-white border border-outline-variant rounded-lg font-body-md" id="taskDescription" rows="3" required></textarea>
+                </div>
+                <div>
+                    <label class="font-label-md text-label-md text-on-surface">Status</label>
+                    <select class="w-full px-md py-md bg-white border border-outline-variant rounded-lg font-body-md" id="taskStatus" required>
+                        <option value="todo">To Do</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="in_review">In Review</option>
+                        <option value="done">Done</option>
+                    </select>
+                </div>
+                <div id="assignUserDiv">
+                    <label class="font-label-md text-label-md text-on-surface">Assign to</label>
+                    <select class="w-full px-md py-md bg-white border border-outline-variant rounded-lg font-body-md" id="taskUserId" required></select>
+                </div>
+                <div class="flex gap-md">
+                    <button class="flex-1 bg-primary text-on-primary py-md rounded-lg font-label-md hover:opacity-90" type="submit">Save</button>
+                    <button class="flex-1 bg-surface-container text-on-surface py-md rounded-lg font-label-md hover:opacity-90" onclick="closeModal()" type="button">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
