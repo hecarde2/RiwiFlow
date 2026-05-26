@@ -1,0 +1,17 @@
+{
+  "name": "riwiflow",
+  "version": "1.0.0",
+  "description": "Kanban task management application with role-based access",
+  "main": "index.html",
+  "scripts": {
+    "start": "json-server --watch db.json --port 3000",
+    "dev": "live-server --port=8080"
+  },
+  "keywords": ["kanban", "task-management", "spa"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "json-server": "^0.17.4",
+    "live-server": "^1.2.2"
+  }
+}
