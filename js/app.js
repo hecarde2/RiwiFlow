@@ -11,11 +11,11 @@ const app = {
 
 // Utilities
 function showElement(id) {
-  document.getElementById(id).classList.remove('hidden');
+  document.getElementById(id).classList.remove('hidden-login', 'hidden-dashboard');
 }
 
-function hideElement(id) {
-  document.getElementById(id).classList.add('hidden');
+function hideElement(id, className = 'hidden-login') {
+  document.getElementById(id).classList.add(className);
 }
 
 function showNotification(message, type = 'success') {
@@ -30,20 +30,24 @@ function showNotification(message, type = 'success') {
 async function fetchUsers() {
   try {
     const res = await fetch(`${API_URL}/users`);
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     app.users = await res.json();
   } catch (err) {
     console.error('Error fetching users:', err);
+    showNotification('Error loading users', 'error');
   }
 }
 
 async function fetchTasks() {
   try {
     const res = await fetch(`${API_URL}/tasks`);
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     app.tasks = await res.json();
     app.filteredTasks = [...app.tasks];
     renderKanban();
   } catch (err) {
     console.error('Error fetching tasks:', err);
+    showNotification('Error loading tasks', 'error');
   }
 }
 
@@ -79,6 +83,8 @@ async function updateTask(id, task) {
       await fetchTasks();
       showNotification('Task updated successfully!');
       closeModal();
+    } else {
+      showNotification('Error updating task', 'error');
     }
   } catch (err) {
     console.error('Error updating task:', err);
@@ -93,6 +99,8 @@ async function deleteTask(id) {
     if (res.ok) {
       await fetchTasks();
       showNotification('Task deleted successfully!');
+    } else {
+      showNotification('Error deleting task', 'error');
     }
   } catch (err) {
     console.error('Error deleting task:', err);
@@ -104,26 +112,30 @@ async function deleteTask(id) {
 async function login(email, password) {
   try {
     const res = await fetch(`${API_URL}/users`);
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const users = await res.json();
     const user = users.find(u => u.email === email && u.password === password);
 
     if (user) {
       app.currentUser = user;
       localStorage.setItem('currentUser', JSON.stringify(user));
-      hideElement('loginView');
-      showElement('dashboardView');
+      document.getElementById('loginView').classList.add('hidden-login');
+      document.getElementById('dashboardView').classList.remove('hidden-dashboard');
       document.getElementById('userRole').textContent = user.role.toUpperCase();
       await fetchUsers();
       await fetchTasks();
       return true;
     } else {
-      document.getElementById('loginError').classList.remove('hidden');
-      document.getElementById('loginError').textContent = 'Invalid email or password';
+      const errorDiv = document.getElementById('loginError');
+      if (errorDiv) {
+        errorDiv.classList.remove('hidden');
+        errorDiv.textContent = 'Invalid email or password';
+      }
       return false;
     }
   } catch (err) {
     console.error('Login error:', err);
-    showNotification('Login error', 'error');
+    showNotification('Login error: ' + err.message, 'error');
     return false;
   }
 }
@@ -131,10 +143,12 @@ async function login(email, password) {
 function logout() {
   app.currentUser = null;
   localStorage.removeItem('currentUser');
-  showElement('loginView');
-  hideElement('dashboardView');
-  document.getElementById('loginForm').reset();
-  document.getElementById('loginError').classList.add('hidden');
+  document.getElementById('loginView').classList.remove('hidden-login');
+  document.getElementById('dashboardView').classList.add('hidden-dashboard');
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) loginForm.reset();
+  const loginError = document.getElementById('loginError');
+  if (loginError) loginError.classList.add('hidden');
 }
 
 // Kanban Rendering
@@ -158,12 +172,12 @@ function createTaskCard(task) {
   const canEdit = app.currentUser.role === 'admin' || task.userId === app.currentUser.id;
   
   return `
-    <div class="task-card bg-surface border border-outline-variant rounded-xl p-md shadow-sm ${canEdit ? 'cursor-pointer' : ''}" ${canEdit ? `onclick="openEditModal(${task.id})"` : ''}>
+    <div class="task-card bg-surface border border-outline-variant rounded-xl p-md shadow-sm ${canEdit ? 'cursor-pointer hover:shadow-md' : ''}" ${canEdit ? `onclick="openEditModal(${task.id})"` : ''}>
       <h4 class="font-label-md text-label-md text-on-surface mb-xs">${task.title}</h4>
       <p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">${task.description}</p>
       <div class="mt-md flex items-center justify-between">
         <span class="text-xs text-on-surface-variant">${user?.name || 'Unassigned'}</span>
-        ${app.currentUser.role === 'admin' ? `<button onclick="event.stopPropagation(); deleteTask(${task.id})" class="text-error hover:bg-error/10 p-1 rounded">✕</button>` : ''}
+        ${app.currentUser.role === 'admin' ? `<button onclick="event.stopPropagation(); deleteTask(${task.id})" class="text-error hover:bg-error/10 p-1 rounded transition-colors">✕</button>` : ''}
       </div>
     </div>
   `;
@@ -205,12 +219,15 @@ function openEditModal(taskId) {
   document.getElementById('taskStatus').value = task.status;
   document.getElementById('taskUserId').value = task.userId;
   
+  const titleInput = document.getElementById('taskTitle');
+  const assignUserDiv = document.getElementById('assignUserDiv');
+  
   if (app.currentUser.role !== 'admin') {
-    document.getElementById('taskTitle').disabled = true;
-    document.getElementById('assignUserDiv').style.display = 'none';
+    titleInput.disabled = true;
+    assignUserDiv.style.display = 'none';
   } else {
-    document.getElementById('taskTitle').disabled = false;
-    document.getElementById('assignUserDiv').style.display = 'block';
+    titleInput.disabled = false;
+    assignUserDiv.style.display = 'block';
   }
   
   populateUserSelect();
@@ -295,15 +312,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize App
   const savedUser = localStorage.getItem('currentUser');
   if (savedUser) {
-    app.currentUser = JSON.parse(savedUser);
-    hideElement('loginView');
-    showElement('dashboardView');
-    document.getElementById('userRole').textContent = app.currentUser.role.toUpperCase();
-    fetchUsers();
-    fetchTasks();
+    try {
+      app.currentUser = JSON.parse(savedUser);
+      document.getElementById('loginView').classList.add('hidden-login');
+      document.getElementById('dashboardView').classList.remove('hidden-dashboard');
+      document.getElementById('userRole').textContent = app.currentUser.role.toUpperCase();
+      fetchUsers();
+      fetchTasks();
+    } catch (err) {
+      console.error('Error restoring session:', err);
+      logout();
+    }
   } else {
-    showElement('loginView');
-    hideElement('dashboardView');
+    document.getElementById('loginView').classList.remove('hidden-login');
+    document.getElementById('dashboardView').classList.add('hidden-dashboard');
   }
 
   setupSearch();
