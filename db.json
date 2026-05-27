@@ -27,7 +27,7 @@
       "id": 1,
       "title": "Design Login Page",
       "description": "Create UI mockups for the login interface",
-      "status": "done",
+      "status": "in_progress",
       "userId": 2
     },
     {
@@ -41,15 +41,8 @@
       "id": 3,
       "title": "Implement Authentication",
       "description": "Add login/logout functionality with role validation",
-      "status": "in_progress",
+      "status": "done",
       "userId": 2
-    },
-    {
-      "id": 4,
-      "title": "Create Kanban Board",
-      "description": "Build Kanban component with drag-and-drop",
-      "status": "in_progress",
-      "userId": 3
     },
     {
       "id": 5,
